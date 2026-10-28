@@ -1,0 +1,38 @@
+name: scholar_wallet
+description: Scholar Wallet - Financial allowance & expense tracking for scholars.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Backend
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  firebase_messaging: ^15.1.5   # FR-25 push notifications (FCM)
+  cloud_firestore: ^5.5.0       # SRS target technology (Firestore)
+  supabase_flutter: ^2.8.0
+
+  # Biometrics (FR-26 / FR-27)
+  local_auth: ^2.3.0
+
+  # Utils
+  provider: ^6.1.2
+  intl: ^0.19.0
+  image_picker: ^1.1.2
+  google_fonts: ^6.2.1
+  uuid: ^4.5.1
+  shared_preferences: ^2.5.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
