@@ -26,17 +26,54 @@ const String supabaseAnonKey = 'sb_publishable_Xko1oikQdDsTPiQEGv8xXw_s6SVZXrt';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey);
-  final appState = AppState();
-  await appState.loadThemeMode();
-  await appState.loadBiometricState(); // FR-26
+  AppState? appState;
+  String? initError;
+  try {
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform)
+        .timeout(const Duration(seconds: 20));
+    await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseAnonKey)
+        .timeout(const Duration(seconds: 20));
+    final s = AppState();
+    await s.loadThemeMode();
+    await s.loadBiometricState(); // FR-26
+    appState = s;
+  } catch (e, st) {
+    initError = '$e\n\n$st';
+  }
+
+  final state = appState;
+  if (state == null) {
+    // Show the real error on screen instead of a blank/black screen.
+    runApp(_InitErrorApp(message: initError ?? 'Unknown startup error'));
+    return;
+  }
   runApp(
     ChangeNotifierProvider.value(
-      value: appState,
+      value: state,
       child: const ScholarWalletApp(),
     ),
   );
+}
+
+class _InitErrorApp extends StatelessWidget {
+  final String message;
+  const _InitErrorApp({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Startup error')),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: SelectableText(message),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class ScholarWalletApp extends StatelessWidget {

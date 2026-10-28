@@ -30,6 +30,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+        <!-- Fallback renderer: fixes black screen on some devices (Impeller/Vulkan) -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false"/>
     </application>
     <queries>
         <intent>
