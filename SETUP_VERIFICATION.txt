@@ -1,0 +1,112 @@
+SCHOLAR WALLET — REGISTRATION-FIRST VERIFICATION
+
+BINAGONG FLOW
+Registration with existing scholar declaration and scholarship details
+ -> Pending verification (NO payout access)
+ -> Admin checks official scholarship roster
+ -> Approved: active scholar can use wallet and receive allowance
+ -> Rejected: no payout access; rejection reason shown
+ -> Information required: correct the SAME registration, then admin reviews again
+ -> Admin issues a payout event (existing disbursement batch)
+ -> Scholar scans their own payout QR
+ -> Review the database amount and recipient on a dedicated screen
+ -> Device biometrics -> server receipt record -> balance + transaction
+
+Wala nang "Apply to become a scholar", open-scholarship catalog,
+motivation statement, o separate scholarship application form.
+This verifies an EXISTING scholarship, not an award of a new scholarship.
+
+SETUP — REQUIRED BEFORE RUNNING THE UPDATED APP
+1. Back up the Supabase database first.
+2. Supabase Dashboard > Authentication > Third-Party Auth:
+   add Firebase project scholarwallet-38c4a (or your own Firebase project).
+3. In Supabase SQL Editor, run supabase_setup.sql as ONE complete script.
+   It is the ONLY SQL file: tables, verification, payouts, Cash Out (mockup),
+   admin delete, row-level security. Safe to run again on an existing project.
+   No claims watcher / Cloud Function is used; nothing runs on a PC.
+4. (Not needed anymore.)
+5. New registrations are always pending + inactive until an admin approves
+   them in Admin > Registration Verification. Admins can delete accounts in
+   Admin > Manage Scholars (per-account button, or the sweep icon to delete
+   all rejected/deactivated accounts with zero balance).
+6. Ensure there is at least one real admin profile. An authorized database
+   administrator may promote a known registered account in SQL:
+     update public.profiles set role = 'admin'
+       where email = 'YOUR_EXISTING_ADMIN_EMAIL';
+   Replace that value with the real admin email. Do not promote untrusted users.
+7. (No token refresh step is needed anymore.)
+8. Run locally:
+     flutter pub get
+     flutter analyze
+     flutter test
+     flutter run
+   The existing GitHub Build APK workflow now analyzes and tests before build.
+
+EXISTING ACCOUNTS
+All legacy scholar profiles without verification are intentionally pending
+and inactive. No balances, transactions or old applications are deleted.
+An admin must review each registration; missing existing scholarship details
+can be requested using "Request information". Previous application tables,
+if present, remain archived and are not used for new approvals.
+
+TERMINOLOGY / SCOPE
+- Registration Verification = check an existing scholar against school records.
+- Approved scholar = admin-verified beneficiary, NOT newly awarded scholarship.
+- Payout event = disbursement batch. The event list uses existing batches.
+- Payout QR = unique recipient-specific, single-use receipt token.
+- Attendance/event QR = NOT a payout; rejected by this scanner.
+- Review Allowance Amount = read-only authoritative payout amount before biometrics.
+- Receive Allowance = receipt tracking and wallet credit only.
+- Cash Out = MOCKUP / DEMO. Scholar links GCash/Maya/bank (details only) and
+  the app simulates the transfer: balance reduced, simulated reference, no
+  real money and no payment gateway. A real transfer needs a provider such as PayMongo or Xendit. General event scheduling/attendance is not added;
+only payout events are listed to keep the capstone focused.
+
+BIOMETRICS
+The OS matches already-enrolled biometrics. Scholar Wallet does not enroll,
+collect or store fingerprint templates. Any biometric enrolled on the device
+may satisfy the OS prompt; this is not a government or school identity check.
+Device biometric prompts do not run in a browser. Use supported Android/iOS
+hardware. The app blocks on failed/cancelled biometrics without marking a
+claim received. There is no server-side biometric attestation: direct API
+clients still require separate attestation if that is a production requirement.
+
+SECURITY / DEPLOYMENT LIMITS
+RLS and authenticated RPCs now protect verification, payout issuance, claim
+ownership, fixed amounts and single-use redemption. Do NOT disable RLS.
+This is still a capstone source update, not a certified payment integration.
+Inherited features needing a separate production hardening pass:
+- Optional biometric login stores saved credentials in SharedPreferences;
+  replace this with secure keystore-backed storage before production use.
+- The original receipts bucket is public. Review storage policies and switch
+  to private receipts + signed URLs before uploading sensitive documents.
+- Review any old RPCs/storage policies not used by this app.
+Push notification delivery requires a separate backend sender; the inherited
+client only registers FCM tokens. No new live push sender is claimed here.
+
+VERIFIED IN THIS WORKSPACE
+- flutter analyze: no issues found.
+- flutter test: 21 tests passed (20 relevant flow/QR/UI tests + inherited smoke test).
+- PostgreSQL: 47 local integration assertions passed using stub Firebase JWTs
+  (verification, payouts, QR redemption, Cash Out, admin delete, no-token access).
+- flutter build web --release: passed (JS release; optional Wasm dry-run warning).
+Local database tests cover registration defaults, no self-approval/admin
+escalation, admin review, roster attestation, required reasons, stale reviews,
+resubmission, verified-only payout, atomic batch creation, QR ownership,
+duplicate redemption, ledger credit and anonymous access denial.
+
+NOT TESTED / NOT DEPLOYED
+No production Firebase/Supabase changes were executed. Real biometric sensor,
+physical camera, live Firebase custom claims and release APK were not tested
+on a device here. Local PostgreSQL tests do not replace a hosted Supabase
+integration test after the setup above.
+
+LOCAL DB TESTS (disposable local PostgreSQL database ONLY)
+  psql -v ON_ERROR_STOP=1 -d EMPTY_TEST_DATABASE \
+    -f test/database_bootstrap.sql -f supabase_setup.sql \
+    -f test/database_verification_test.sql
+The bootstrap creates test roles and stub auth/storage schemas. NEVER run it
+against Supabase or a production database. Test data is rolled back.
+
+SOURCE FOR FIREBASE/SUPABASE INTEGRATION SETUP
+https://supabase.com/docs/guides/auth/third-party/firebase-auth
